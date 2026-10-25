@@ -1,128 +1,110 @@
-:root {
-  /* Matches the logo artwork's background so the image blends seamlessly */
-  --bg: #040404;
-  --gold: #dcb36c;
-  --gold-deep: #ae7e3b;
-  --muted: rgba(220, 179, 108, 0.45);
+@import "tailwindcss";
+
+/* Palette drawn from the logo: gold leaf on black, warmed with desert neutrals. */
+@theme {
+  --color-ink: #0a0907;
+  --color-ink-2: #15120e;
+  --color-ink-3: #1d1a15;
+  --color-line-dark: #2e2920;
+
+  --color-gold-light: #dcb36c;
+  --color-gold: #c39a55;
+  --color-gold-deep: #ae7e3b;
+  --color-bronze: #7a5820;
+
+  --color-ivory: #f3ede2;
+  --color-cream: #f8f4ec;
+  --color-sand: #efe7d9;
+  --color-stone: #ddd2bf;
+
+  --color-text: #1f1b16;
+  --color-muted: #5f574b;
+  --color-mist: #b9b0a2;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@theme inline {
+  --font-display: var(--font-gloock), Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-brand: var(--font-cinzel), Georgia, serif;
 }
 
-html,
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--bg);
-  color: var(--gold);
-}
-
-body {
-  font-family: var(--font-cinzel), Georgia, "Times New Roman", serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-.splash {
-  min-height: 100vh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(1rem, 3svh, 2rem);
-  padding: 2rem 1rem 4.5rem;
-  position: relative;
-}
-
-.logo {
-  display: block;
-  /* Leave vertical room for the button + footer on short screens */
-  width: min(90vw, 68svh, 640px);
-  height: auto;
-  /* Feather the edges so the image's subtle texture never shows a seam */
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent),
-    linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent),
-    linear-gradient(to bottom, transparent, #000 5%, #000 95%, transparent);
-  mask-composite: intersect;
-  animation: fade-in 1.2s ease-out both;
-}
-
-.quote {
-  display: inline-block;
-  padding: 0.95rem 2.25rem;
-  border: 1px solid var(--gold-deep);
-  color: var(--gold);
-  font-size: 0.95rem;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  text-decoration: none;
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease,
-    border-color 0.25s ease;
-  animation: fade-in 1.2s 0.3s ease-out both;
-}
-
-.quote:hover {
-  background-color: var(--gold);
-  border-color: var(--gold);
-  color: var(--bg);
-}
-
-.quote:focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 4px;
-}
-
-.footer {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.25rem 0.75rem;
-  padding: 0 1rem;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-@media (max-width: 480px) {
-  .footer {
-    flex-direction: column;
-    align-items: center;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 7rem;
   }
 
-  .footer [aria-hidden="true"] {
-    display: none;
+  body {
+    @apply bg-cream font-sans text-text antialiased;
+  }
+
+  /* Gloock ships one weight and no italic; never fake either. */
+  .font-display {
+    font-synthesis: none;
+  }
+
+  ::selection {
+    @apply bg-gold-light text-ink;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-gold;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
+@layer components {
+  .eyebrow {
+    @apply text-xs font-semibold tracking-[0.28em] uppercase;
+  }
+
+  /* Long-form copy (privacy policy, etc.) */
+  .prose-page h2 {
+    @apply mt-12 mb-4 font-display text-3xl font-medium text-text;
+  }
+  .prose-page p,
+  .prose-page li {
+    @apply leading-relaxed text-muted;
+  }
+  .prose-page p + p {
+    @apply mt-4;
+  }
+  .prose-page ul {
+    @apply mt-4 list-disc space-y-2 pl-6;
+  }
+  .prose-page a {
+    @apply text-bronze underline underline-offset-4 hover:text-text;
+  }
 }
 
-@keyframes fade-in {
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.08);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -130,9 +112,10 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .logo,
-  .quote {
-    animation: none;
-  }
+@utility animate-hero-zoom {
+  animation: hero-zoom 2.4s var(--ease-out-soft) both;
+}
+
+@utility animate-rise {
+  animation: rise 1s var(--ease-out-soft) both;
 }

@@ -1,32 +1,45 @@
 import type { Metadata, Viewport } from "next";
-import { Cinzel } from "next/font/google";
+import { Cinzel, Gloock, Manrope } from "next/font/google";
+import { getSettings } from "@/lib/cms";
+import { site } from "@/lib/site";
 import "./globals.css";
+
+const gloock = Gloock({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-gloock",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
+});
 
 const cinzel = Cinzel({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["500"],
   variable: "--font-cinzel",
 });
 
-const description =
-  "Built on faith. Designed for generations. Custom homes and estate construction by Providence Estate Builders.";
-
-export const metadata: Metadata = {
-  metadataBase: new URL("https://providenceestate.com"),
-  title: "Providence Estate Builders",
-  description,
-  openGraph: {
-    title: "Providence Estate Builders",
-    description,
-    url: "/",
-    siteName: "Providence Estate Builders",
-    type: "website",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings();
+  return {
+    metadataBase: new URL(site.url),
+    title: {
+      default: `${settings.name} | Custom Homes & Remodeling in Arizona`,
+      template: `%s | ${settings.name}`,
+    },
+    description: settings.description,
+    openGraph: {
+      siteName: settings.name,
+      type: "website",
+      locale: "en_US",
+    },
+  };
+}
 
 export const viewport: Viewport = {
-  themeColor: "#040404",
-  colorScheme: "dark",
+  themeColor: "#0a0907",
 };
 
 export default function RootLayout({
@@ -35,7 +48,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cinzel.variable}>
+    <html
+      lang="en"
+      className={`${gloock.variable} ${manrope.variable} ${cinzel.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
