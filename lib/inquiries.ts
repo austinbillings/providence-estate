@@ -43,24 +43,11 @@ export type Inquiry = {
   submittedAt: string;
 };
 
-/**
- * Sends a new lead to the business.
- *
- * TODO(delivery): not wired up yet. Connect an email service (e.g. Resend),
- * form backend, or CRM here and return `true` once the inquiry is delivered.
- * While this returns `false`, the contact form asks the visitor to send their
- * (pre-filled) message by email instead, so no lead is silently dropped.
- */
-export async function deliverInquiry(inquiry: Inquiry): Promise<boolean> {
-  // Visible in server / Vercel function logs as a last-resort record.
-  console.info("[inquiry]", JSON.stringify(inquiry));
-  return false;
-}
+const FROM = "Providence Website <inquiries@mail.providenceestate.com>";
 
-/** Pre-filled email fallback for when online delivery isn't available. */
-export function inquiryMailto(inquiry: Inquiry, to: string) {
+function inquiryLines(inquiry: Inquiry) {
   const optional = (label: string, value: string) => (value ? [`${label}: ${value}`] : []);
-  const lines = [
+  return [
     `Name: ${inquiry.name}`,
     `Email: ${inquiry.email}`,
     ...optional("Phone", inquiry.phone),
@@ -69,9 +56,50 @@ export function inquiryMailto(inquiry: Inquiry, to: string) {
     ...optional("Timeline", inquiry.timeline),
     ...optional("Budget", inquiry.budget),
     ...optional("Heard about us", inquiry.referral),
-    "",
-    inquiry.message.slice(0, 1500),
   ];
-  const subject = `Project inquiry: ${inquiry.projectType} — ${inquiry.name}`;
-  return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(lines.join("\n"))}`;
+}
+
+const inquirySubject = (inquiry: Inquiry) =>
+  `Project inquiry: ${inquiry.projectType} — ${inquiry.name}`;
+
+const escapeHtml = (text: string) =>
+  text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+/**
+ * Emails a new lead to the business through Resend, with the visitor as
+ * reply-to so the owners can answer straight from their inbox. Returns false
+ * (and the form falls back to a pre-filled email) if Resend isn't configured
+ * or the send fails, so no lead is silently dropped.
+ */
+export async function deliverInquiry(inquiry: Inquiry, to: string): Promise<boolean> {
+  // Visible in server / Vercel function logs as a last-resort record.
+  console.info("[inquiry]", JSON.stringify(inquiry));
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return false;
+
+  const lines = inquiryLines(inquiry);
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: FROM,
+      to: [to],
+      reply_to: inquiry.email,
+      subject: inquirySubject(inquiry),
+      text: [...lines, "", inquiry.message].join("\n"),
+      html: `<p>${lines.map(escapeHtml).join("<br>")}</p><p style="white-space:pre-wrap">${escapeHtml(inquiry.message)}</p>`,
+    }),
+  });
+  if (!res.ok) {
+    console.error("[inquiry] Resend rejected the email", res.status, await res.text());
+    return false;
+  }
+  return true;
+}
+
+/** Pre-filled email fallback for when online delivery isn't available. */
+export function inquiryMailto(inquiry: Inquiry, to: string) {
+  const lines = [...inquiryLines(inquiry), "", inquiry.message.slice(0, 1500)];
+  return `mailto:${to}?subject=${encodeURIComponent(inquirySubject(inquiry))}&body=${encodeURIComponent(lines.join("\n"))}`;
 }

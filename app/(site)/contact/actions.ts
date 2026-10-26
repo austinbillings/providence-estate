@@ -79,7 +79,8 @@ export async function submitInquiry(
 
   let delivered = false;
   try {
-    delivered = await deliverInquiry(inquiry);
+    // INQUIRY_TO redirects leads (e.g. to a developer) for testing.
+    delivered = await deliverInquiry(inquiry, process.env.INQUIRY_TO || settings.email);
   } catch (error) {
     console.error("[inquiry] delivery failed", error);
   }
